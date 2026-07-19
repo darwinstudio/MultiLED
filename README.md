@@ -1,5 +1,9 @@
 # MultiLED
 
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Language](https://img.shields.io/badge/language-C-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.0-brightgreen.svg)
+
 一个面向嵌入式系统的轻量级 LED 状态管理框架。
 
 设计思想参考 [MultiButton](https://github.com/0x1abin/MultiButton)，通过对象化管理和状态机实现多个 LED 的统一控制。
