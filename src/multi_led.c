@@ -4,23 +4,8 @@
  */
 
 #include "multi_led.h"
+#include "multi_led_config.h"
 #include <string.h>
-
-/*
- * 默认周期定义 (ms)
- */
-#define BLINK_SLOW_PERIOD       1000
-#define BLINK_FAST_PERIOD       200
-#define HEARTBEAT_PERIOD        2000
-
-/*
- * 心跳灯时序 (ms)
- * 亮100 -> 灭100 -> 亮100 -> 灭1700
- */
-#define HEARTBEAT_ON1           100
-#define HEARTBEAT_OFF1          100
-#define HEARTBEAT_ON2           100
-#define HEARTBEAT_OFF2          1700
 
 /*
  * LED 链表头

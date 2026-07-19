@@ -27,11 +27,12 @@
 ```
 MultiLED
 ├── inc/
-│   └── multi_led.h       # 头文件
+│   ├── multi_led.h            # 头文件
+│   └── multi_led_config.h     # 默认配置 (可覆盖)
 ├── src/
-│   └── multi_led.c       # 实现
+│   └── multi_led.c            # 实现
 └── examples/
-    └── main.c             # 使用示例
+    └── main.c                 # 使用示例
 ```
 
 ## 集成方式
@@ -47,6 +48,34 @@ git submodule add git@github.com:darwinstudio/MultiLED.git drivers/MultiLED
 ### 方式二：复制文件
 
 将 `inc/` 和 `src/` 目录复制到你的项目中。
+
+### 自定义配置
+
+默认参数在 `inc/multi_led_config.h` 中定义。如需修改，在自己项目中创建同名文件 `multi_led_config.h`，并将自己的目录优先加入头文件搜索路径：
+
+```
+your_project/
+├── config/
+│   └── multi_led_config.h   # 你的自定义配置 (优先级高于库的默认配置)
+├── drivers/
+│   └── MultiLED/            # submodule
+└── ...
+```
+
+IDE 中将 `config/` 目录放在 `drivers/MultiLED/inc` 前面即可生效。
+
+自定义配置示例：
+
+```c
+#ifndef __MULTI_LED_CONFIG_H
+#define __MULTI_LED_CONFIG_H
+
+#define BLINK_SLOW_PERIOD       500     // 改为 500ms
+#define BLINK_FAST_PERIOD       100     // 改为 100ms
+#define HEARTBEAT_PERIOD        1500    // 改为 1500ms
+
+#endif
+```
 
 ### 使用步骤
 
