@@ -36,17 +36,27 @@ MultiLED
 
 ## 集成方式
 
-### 1. 复制文件
+### 方式一：Git Submodule（推荐）
+
+```bash
+git submodule add git@github.com:darwinstudio/MultiLED.git drivers/MultiLED
+```
+
+然后在 IDE 中添加头文件路径 `drivers/MultiLED/inc` 和源文件 `drivers/MultiLED/src/multi_led.c`。
+
+### 方式二：复制文件
 
 将 `inc/` 和 `src/` 目录复制到你的项目中。
 
-### 2. 包含头文件
+### 使用步骤
+
+#### 1. 包含头文件
 
 ```c
 #include "multi_led.h"
 ```
 
-### 3. 实现 GPIO 回调
+#### 2. 实现 GPIO 回调
 
 ```c
 void led_write_pin(uint8_t id, uint8_t level)
@@ -59,7 +69,7 @@ void led_write_pin(uint8_t id, uint8_t level)
 }
 ```
 
-### 4. 初始化和使用
+#### 3. 初始化和使用
 
 ```c
 // 初始化
@@ -73,7 +83,7 @@ led_create(&led_run, 0, led_write_pin);
 led_set_mode(&led_run, LED_MODE_HEARTBEAT);
 ```
 
-### 5. 周期调用
+#### 4. 周期调用
 
 **裸机：**
 
@@ -113,6 +123,10 @@ void led_task(void *argument)
 - 工业控制设备
 - 医疗设备
 - 仪器仪表
+
+## 开发工具
+
+本项目代码由 [Claude Code](https://claude.ai/claude-code) 工具辅助生成，底层大模型为 MiMo 2.5 Pro。
 
 ## License
 
