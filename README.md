@@ -130,7 +130,7 @@ void led_task(void *argument)
 {
     for (;;)
     {
-        multi_led_process(HAL_GetTick());
+        multi_led_process(xTaskGetTickCount());
         osDelay(10);  // 推荐 10~20ms
     }
 }
