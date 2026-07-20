@@ -16,7 +16,7 @@
 
 /* 快闪周期 (ms) */
 #ifndef BLINK_FAST_PERIOD
-#define BLINK_FAST_PERIOD       200
+#define BLINK_FAST_PERIOD       300
 #endif
 
 /* 心跳灯总周期 (ms) */
