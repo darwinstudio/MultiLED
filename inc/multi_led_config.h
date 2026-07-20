@@ -19,29 +19,24 @@
 #define BLINK_FAST_PERIOD       300
 #endif
 
-/* 心跳灯总周期 (ms) */
+/* 心跳灯完整周期 (ms)，亮灭各占一半，如 1000 = 亮500ms + 灭500ms */
 #ifndef HEARTBEAT_PERIOD
-#define HEARTBEAT_PERIOD        2000
+#define HEARTBEAT_PERIOD        1000
 #endif
 
-/* 心跳灯：第一次亮 (ms) */
-#ifndef HEARTBEAT_ON1
-#define HEARTBEAT_ON1           300
+/*
+ * 临界区保护 (线程安全)
+ *
+ * 裸机环境默认空实现；FreeRTOS 场景请覆盖为:
+ *   #define LED_LOCK()    taskENTER_CRITICAL()
+ *   #define LED_UNLOCK()  taskEXIT_CRITICAL()
+ */
+#ifndef LED_LOCK
+#define LED_LOCK()              ((void)0)
 #endif
 
-/* 心跳灯：第一次灭 (ms) */
-#ifndef HEARTBEAT_OFF1
-#define HEARTBEAT_OFF1          300
-#endif
-
-/* 心跳灯：第二次亮 (ms) */
-#ifndef HEARTBEAT_ON2
-#define HEARTBEAT_ON2           300
-#endif
-
-/* 心跳灯：第二次灭 (ms) */
-#ifndef HEARTBEAT_OFF2
-#define HEARTBEAT_OFF2          (HEARTBEAT_PERIOD-HEARTBEAT_ON1-HEARTBEAT_OFF1-HEARTBEAT_ON2)
+#ifndef LED_UNLOCK
+#define LED_UNLOCK()            ((void)0)
 #endif
 
 #endif /* __MULTI_LED_CONFIG_H */

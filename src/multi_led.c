@@ -13,52 +13,27 @@
 static led_t *led_head = NULL;
 
 /*
- * 内部辅助：设置输出电平
+ * 内部辅助：设置输出电平 (仅在电平变化时写 GPIO)
  */
 static void led_output(led_t *led, uint8_t level)
 {
+    if (led->state == level)
+    {
+        return;
+    }
+    led->state = level;
     if (led->write_pin != NULL)
     {
         led->write_pin(led->id, level);
     }
-    led->state = level;
 }
 
 /*
- * 内部辅助：计算时间差 (处理溢出)
+ * 内部辅助：计算时间差 (无符号减法天然处理 32 位溢出)
  */
 static uint32_t tick_diff(uint32_t now, uint32_t prev)
 {
     return now - prev;
-}
-
-/*
- * 内部辅助：心跳灯状态机
- *
- * 时间线:
- *   0          100   200   300        2000
- *   |--- ON ---|--- OFF ---|--- ON ---|--- OFF ---|
- */
-static void heartbeat_process(led_t *led, uint32_t elapsed)
-{
-    uint32_t pos = elapsed % HEARTBEAT_PERIOD;
-
-    if (pos < HEARTBEAT_ON1)
-    {
-        led_output(led, 1);
-    }
-    else if (pos < HEARTBEAT_ON1 + HEARTBEAT_OFF1)
-    {
-        led_output(led, 0);
-    }
-    else if (pos < HEARTBEAT_ON1 + HEARTBEAT_OFF1 + HEARTBEAT_ON2)
-    {
-        led_output(led, 1);
-    }
-    else
-    {
-        led_output(led, 0);
-    }
 }
 
 /*
@@ -67,6 +42,21 @@ static void heartbeat_process(led_t *led, uint32_t elapsed)
 static void led_process(led_t *led, uint32_t tick)
 {
     uint32_t elapsed;
+
+    /* 模式刚切换：用当前 tick 初始化计时起点 */
+    if (led->mode_dirty)
+    {
+        led->tick = tick;
+        led->mode_dirty = 0;
+
+        /* BLINK_N_TIMES: 立即点亮第一次，本 tick 不再进入 switch */
+        if (led->mode == LED_MODE_BLINK_N_TIMES && led->blink_target > 0)
+        {
+            led_output(led, 1);
+            led->blink_count = 1;
+            return;
+        }
+    }
 
     switch (led->mode)
     {
@@ -83,8 +73,7 @@ static void led_process(led_t *led, uint32_t tick)
             if (elapsed >= BLINK_SLOW_PERIOD)
             {
                 led->tick = tick;
-                led->state = !led->state;
-                led_output(led, led->state);
+                led_output(led, !led->state);
             }
             break;
 
@@ -93,27 +82,33 @@ static void led_process(led_t *led, uint32_t tick)
             if (elapsed >= BLINK_FAST_PERIOD)
             {
                 led->tick = tick;
-                led->state = !led->state;
-                led_output(led, led->state);
+                led_output(led, !led->state);
             }
             break;
 
         case LED_MODE_BLINK_N_TIMES:
-            if (led->blink_count >= led->blink_target)
-            {
-                /* 达到目标次数，停止闪烁并保持灭 */
-                led_output(led, 0);
-                break;
-            }
             elapsed = tick_diff(tick, led->tick);
-            if (elapsed >= led->period)
+            if (led->state == 1)
             {
-                led->tick = tick;
-                led->state = !led->state;
-                led_output(led, led->state);
-                /* 每次灭->亮算一次完整闪烁 */
-                if (led->state == 1)
+                /* 当前亮：等 period 后熄灭 */
+                if (elapsed >= led->period)
                 {
+                    led->tick = tick;
+                    led_output(led, 0);
+                }
+            }
+            else
+            {
+                /* 当前灭：检查是否已完成所有闪烁 */
+                if (led->blink_count >= led->blink_target)
+                {
+                    break;
+                }
+                /* 等 off_period 后点亮，计数+1 */
+                if (elapsed >= led->off_period)
+                {
+                    led->tick = tick;
+                    led_output(led, 1);
                     led->blink_count++;
                 }
             }
@@ -121,7 +116,11 @@ static void led_process(led_t *led, uint32_t tick)
 
         case LED_MODE_HEARTBEAT:
             elapsed = tick_diff(tick, led->tick);
-            heartbeat_process(led, elapsed);
+            if (elapsed >= led->period)
+            {
+                led->tick = tick;
+                led_output(led, !led->state);
+            }
             break;
 
         default:
@@ -144,12 +143,27 @@ void led_create(led_t *led, uint8_t id, void (*write_pin)(uint8_t, uint8_t))
         return;
     }
 
+    LED_LOCK();
+
+    /* 重复 ID 检查：已存在则不重复加入 */
+    led_t *p = led_head;
+    while (p != NULL)
+    {
+        if (p->id == id)
+        {
+            LED_UNLOCK();
+            return;
+        }
+        p = p->next;
+    }
+
     /* 初始化字段 */
     memset(led, 0, sizeof(led_t));
     led->id = id;
     led->write_pin = write_pin;
     led->mode = LED_MODE_OFF;
     led->state = 0;
+    led->mode_dirty = 0;
     led->next = NULL;
 
     /* 追加到链表尾部 */
@@ -159,13 +173,15 @@ void led_create(led_t *led, uint8_t id, void (*write_pin)(uint8_t, uint8_t))
     }
     else
     {
-        led_t *p = led_head;
+        p = led_head;
         while (p->next != NULL)
         {
             p = p->next;
         }
         p->next = led;
     }
+
+    LED_UNLOCK();
 }
 
 void led_set_mode(led_t *led, led_mode_t mode)
@@ -175,10 +191,19 @@ void led_set_mode(led_t *led, led_mode_t mode)
         return;
     }
 
+    LED_LOCK();
+
     led->mode = mode;
     led->state = 0;
-    led->tick = 0;
     led->blink_count = 0;
+    led->blink_target = 0;
+    led->mode_dirty = 1;
+
+    /* 立即熄灭 GPIO，避免残留上一模式的电平 */
+    if (led->write_pin != NULL)
+    {
+        led->write_pin(led->id, 0);
+    }
 
     /* 根据模式设置默认周期 */
     switch (mode)
@@ -190,31 +215,62 @@ void led_set_mode(led_t *led, led_mode_t mode)
             led->period = BLINK_FAST_PERIOD;
             break;
         case LED_MODE_BLINK_N_TIMES:
-            led->period = BLINK_FAST_PERIOD;
+            /* period/off_period 由 led_set_blink_times 设置 */
+            break;
+        case LED_MODE_HEARTBEAT:
+            led->period = HEARTBEAT_PERIOD / 2;
             break;
         default:
             led->period = 0;
             break;
     }
+
+    LED_UNLOCK();
 }
 
-void led_set_blink_times(led_t *led, uint16_t times)
+void led_set_blink_times(led_t *led, uint16_t times, uint32_t on_ms, uint32_t off_ms)
 {
     if (led == NULL)
     {
         return;
     }
+
+    LED_LOCK();
     led->blink_target = times;
     led->blink_count = 0;
+    led->period = on_ms;
+    led->off_period = off_ms;
+    LED_UNLOCK();
 }
 
 void multi_led_process(uint32_t tick)
 {
-    led_t *p = led_head;
+    LED_LOCK();
 
+    led_t *p = led_head;
     while (p != NULL)
     {
         led_process(p, tick);
         p = p->next;
     }
+
+    LED_UNLOCK();
+}
+
+led_mode_t led_get_mode(const led_t *led)
+{
+    if (led == NULL)
+    {
+        return LED_MODE_OFF;
+    }
+    return led->mode;
+}
+
+uint8_t led_get_state(const led_t *led)
+{
+    if (led == NULL)
+    {
+        return 0;
+    }
+    return led->state;
 }

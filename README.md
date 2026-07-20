@@ -22,9 +22,9 @@
 | `LED_MODE_OFF` | 常灭 | - |
 | `LED_MODE_ON` | 常亮 | - |
 | `LED_MODE_BLINK_SLOW` | 慢闪 | 1000ms |
-| `LED_MODE_BLINK_FAST` | 快闪 | 200ms |
+| `LED_MODE_BLINK_FAST` | 快闪 | 300ms |
 | `LED_MODE_BLINK_N_TIMES` | 指定次数闪烁 | - |
-| `LED_MODE_HEARTBEAT` | 心跳灯 | 2000ms |
+| `LED_MODE_HEARTBEAT` | 心跳灯 | 1000ms |
 
 ## 文件结构
 
@@ -77,6 +77,10 @@ IDE 中将 `config/` 目录放在 `drivers/MultiLED/inc` 前面即可生效。
 #define BLINK_SLOW_PERIOD       500     // 改为 500ms
 #define BLINK_FAST_PERIOD       100     // 改为 100ms
 #define HEARTBEAT_PERIOD        1500    // 改为 1500ms
+
+// FreeRTOS 线程安全 (可选)
+#define LED_LOCK()              taskENTER_CRITICAL()
+#define LED_UNLOCK()            taskEXIT_CRITICAL()
 
 #endif
 ```
@@ -147,8 +151,10 @@ void led_task(void *argument)
 | `multi_led_init()` | 初始化 LED 管理器 |
 | `led_create(led, id, write_pin)` | 创建 LED 对象并绑定 GPIO 回调 |
 | `led_set_mode(led, mode)` | 设置 LED 模式 |
-| `led_set_blink_times(led, times)` | 设置闪烁次数 (BLINK_N_TIMES) |
+| `led_set_blink_times(led, times, on_ms, off_ms)` | 设置闪烁次数及亮灭时间 (BLINK_N_TIMES) |
 | `multi_led_process(tick)` | 状态机处理，传入当前时间戳 (ms) |
+| `led_get_mode(led)` | 获取当前模式 |
+| `led_get_state(led)` | 获取当前输出电平 (0/1) |
 
 ## 应用场景
 

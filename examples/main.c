@@ -80,12 +80,12 @@ void app_led_init(void)
 }
 
 /*
- * 示例: 通信指示 - UART 接收数据时闪烁1次
+ * 示例: 通信指示 - UART 接收数据时闪烁1次 (亮100ms 灭100ms)
  */
 void on_uart_rx(void)
 {
-    led_set_blink_times(&led_comm, 1);
     led_set_mode(&led_comm, LED_MODE_BLINK_N_TIMES);
+    led_set_blink_times(&led_comm, 1, 100, 100);
 }
 
 /*
