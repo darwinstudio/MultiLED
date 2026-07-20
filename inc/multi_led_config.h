@@ -26,22 +26,22 @@
 
 /* 心跳灯：第一次亮 (ms) */
 #ifndef HEARTBEAT_ON1
-#define HEARTBEAT_ON1           100
+#define HEARTBEAT_ON1           300
 #endif
 
 /* 心跳灯：第一次灭 (ms) */
 #ifndef HEARTBEAT_OFF1
-#define HEARTBEAT_OFF1          100
+#define HEARTBEAT_OFF1          300
 #endif
 
 /* 心跳灯：第二次亮 (ms) */
 #ifndef HEARTBEAT_ON2
-#define HEARTBEAT_ON2           100
+#define HEARTBEAT_ON2           300
 #endif
 
 /* 心跳灯：第二次灭 (ms) */
 #ifndef HEARTBEAT_OFF2
-#define HEARTBEAT_OFF2          1700
+#define HEARTBEAT_OFF2          (HEARTBEAT_PERIOD-HEARTBEAT_ON1-HEARTBEAT_OFF1-HEARTBEAT_ON2)
 #endif
 
 #endif /* __MULTI_LED_CONFIG_H */
