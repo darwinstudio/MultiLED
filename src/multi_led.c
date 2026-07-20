@@ -190,11 +190,7 @@ void led_set_mode(led_t *led, led_mode_t mode)
             led->period = BLINK_FAST_PERIOD;
             break;
         case LED_MODE_BLINK_N_TIMES:
-            /* 周期由用户或默认值决定，这里给一个默认 */
-            if (led->period == 0)
-            {
-                led->period = BLINK_FAST_PERIOD;
-            }
+            led->period = BLINK_FAST_PERIOD;
             break;
         default:
             led->period = 0;
