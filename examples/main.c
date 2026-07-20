@@ -84,7 +84,6 @@ void app_led_init(void)
  */
 void on_uart_rx(void)
 {
-    led_set_mode(&led_comm, LED_MODE_BLINK_N_TIMES);
     led_set_blink_times(&led_comm, 1, 100, 100);
 }
 

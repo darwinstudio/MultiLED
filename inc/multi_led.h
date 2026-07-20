@@ -80,11 +80,12 @@ void led_create(led_t *led, uint8_t id, void (*write_pin)(uint8_t, uint8_t));
 void led_set_mode(led_t *led, led_mode_t mode);
 
 /**
- * @brief  设置闪烁参数 (LED_MODE_BLINK_N_TIMES)
+ * @brief  启动指定次数闪烁 (自动切换为 BLINK_N_TIMES 模式)
  * @param  led    LED 对象指针
  * @param  times  闪烁次数
  * @param  on_ms  每次点亮持续时间 (ms)
  * @param  off_ms 每次熄灭持续时间 (ms)
+ * @note   无需先调用 led_set_mode，本函数内部完成模式切换
  */
 void led_set_blink_times(led_t *led, uint16_t times, uint32_t on_ms, uint32_t off_ms);
 

@@ -236,10 +236,19 @@ void led_set_blink_times(led_t *led, uint16_t times, uint32_t on_ms, uint32_t of
     }
 
     LED_LOCK();
+    led->mode = LED_MODE_BLINK_N_TIMES;
+    led->state = 0;
     led->blink_target = times;
     led->blink_count = 0;
     led->period = on_ms;
     led->off_period = off_ms;
+    led->mode_dirty = 1;
+
+    /* 立即熄灭 GPIO，等待 process 中首次点亮 */
+    if (led->write_pin != NULL)
+    {
+        led->write_pin(led->id, 0);
+    }
     LED_UNLOCK();
 }
 
